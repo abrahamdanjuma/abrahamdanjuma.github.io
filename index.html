@@ -1,0 +1,702 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Abraham Danjuma | Design & Build</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><rect width=%22100%22 height=%22100%22 fill=%22%23333%22/></svg>">
+  <style>
+    @font-face {
+      font-family: 'Cascadia Code';
+      src: url('cascadia.code.ttf') format('truetype');
+    }
+
+    /* ── CSS VARIABLES ───────────────────────────────────────── */
+    :root {
+      --bg:        #fff;
+      --bg-off:    #fdfdfd;
+      --bg-hover:  #f9f9f9;
+      --fg:        #333;
+      --fg-mid:    #777;
+      --fg-light:  #999;
+      --fg-faint:  #bbb;
+      --fg-ghost:  #ccc;
+      --fg-line:   #eee;
+      --fg-inv:    #fff;
+      --bg-inv:    #333;
+    }
+    html.dark {
+      --bg:        #111;
+      --bg-off:    #141414;
+      --bg-hover:  #1a1a1a;
+      --fg:        #e8e8e8;
+      --fg-mid:    #999;
+      --fg-light:  #777;
+      --fg-faint:  #555;
+      --fg-ghost:  #444;
+      --fg-line:   #2a2a2a;
+      --fg-inv:    #111;
+      --bg-inv:    #e8e8e8;
+    }
+
+    html, body {
+      margin: 0; padding: 0; background: var(--bg);
+      font-family: 'Cascadia Code', monospace; color: var(--fg);
+      height: 1900vh; cursor: none; overflow-x: hidden;
+      transition: background 0.4s ease, color 0.4s ease;
+    }
+
+    /* DARK MODE TOGGLE */
+    #dark-toggle {
+      position: absolute; top: 30px; right: 10%;
+      background: none; border: 1px solid var(--fg-faint);
+      color: var(--fg-light); font-family: 'Cascadia Code', monospace;
+      font-size: 0.65rem; letter-spacing: 2px; text-transform: uppercase;
+      padding: 7px 14px; cursor: none; z-index: 10001;
+      transition: border-color 0.3s ease, color 0.3s ease, background 0.3s ease;
+    }
+    #dark-toggle:hover { border-color: var(--fg); color: var(--fg); }
+
+    /* DISCLAIMER LAYER */
+    #disclaimer-layer {
+      position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+      background: var(--bg-off); z-index: 10000; display: flex;
+      flex-direction: column; justify-content: center; padding: 10%;
+      box-sizing: border-box; transition: opacity 0.8s ease, visibility 0.8s, background 0.4s ease;
+    }
+    .enter-btn {
+      display: inline-block; margin-top: 10px; padding: 12px 25px;
+      border: 1.5px solid var(--fg); background: transparent; color: var(--fg);
+      font-family: 'Cascadia Code', monospace; font-weight: bold;
+      cursor: none; transition: all 0.3s ease;
+    }
+    .enter-btn:hover { background: var(--fg); color: var(--fg-inv); }
+
+    /* COMPANIES TICKER */
+    #companies-ticker {
+      position: absolute; bottom: 40px; left: 0; width: 100%;
+      overflow: hidden; pointer-events: none;
+    }
+    #companies-ticker::before,
+    #companies-ticker::after {
+      content: ''; position: absolute; top: 0; width: 120px; height: 100%; z-index: 2;
+    }
+    #companies-ticker::before { left: 0; background: linear-gradient(to right, var(--bg-off), transparent); }
+    #companies-ticker::after  { right: 0; background: linear-gradient(to left, var(--bg-off), transparent); }
+
+    .ticker-label {
+      font-size: 0.6rem; color: var(--fg-ghost); text-transform: uppercase;
+      letter-spacing: 3px; margin-bottom: 14px; padding-left: 10%;
+    }
+
+    .ticker-track {
+      display: flex; align-items: center;
+      width: max-content;
+      animation: ticker 18s linear infinite;
+    }
+    @keyframes ticker {
+      from { transform: translateX(0); }
+      to   { transform: translateX(-50%); }
+    }
+
+    .ticker-item {
+      display: flex; align-items: center; justify-content: center;
+      width: 160px;
+      flex-shrink: 0;
+    }
+
+    .ticker-item img {
+      height: 28px; width: auto; max-width: 130px; max-height: 28px;
+      object-fit: contain;
+      transition: filter 0.4s ease;
+    }
+    html.dark .ticker-item img { filter: invert(1) brightness(0.75); }
+
+    /* Force tall/narrow logos to fill width instead */
+    .ticker-item img.logo-tall {
+      height: auto; width: 80px; max-height: 36px;
+    }
+
+    .ticker-item.highlight {
+      width: 180px;
+    }
+
+    .ticker-item.highlight span {
+      font-size: 1rem; font-weight: bold; color: var(--fg-inv);
+      font-family: 'Cascadia Code', monospace; letter-spacing: 2px;
+      background: var(--bg-inv); padding: 6px 16px;
+      transition: background 0.4s ease, color 0.4s ease;
+    }
+
+    /* MAIN VIEWPORT */
+    .viewport {
+      position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+      display: grid; align-items: center;
+      padding-left: 10%; box-sizing: border-box;
+      opacity: 0; transition: opacity 1s ease;
+      pointer-events: none;
+    }
+
+    .intro-build, .cv-group, .real-project-group, .project-group, .contact-group {
+      grid-area: 1 / 1;
+      opacity: 0;
+      visibility: hidden;
+      pointer-events: none;
+    }
+
+    .clock-item { display: block; line-height: 1.2; }
+
+    /* ANIMATIONS */
+    @keyframes clockIn {
+      from { opacity: 0; transform: rotate(10deg) translateY(30px); }
+      to   { opacity: 1; transform: rotate(0deg) translateY(0); }
+    }
+    @keyframes clockOut {
+      to { opacity: 0; transform: translateY(-120px) rotate(-5deg); }
+    }
+    @keyframes toggleActive {
+      0%, 100% { visibility: visible; }
+    }
+
+    /* TYPOGRAPHY */
+    .intro-text { font-size: 2.8rem; }
+    .sub-text   { font-size: 2.8rem; color: var(--fg-light); }
+    .cv-line    { font-size: 2.2rem; }
+    .section-label { font-size: 0.8rem; color: var(--fg-faint); text-transform: uppercase; letter-spacing: 2px; margin-bottom: 20px; display: block; }
+    .cv-link { color: var(--fg); font-weight: bold; text-decoration: none; border-bottom: 3px solid var(--fg); cursor: none; transition: color 0.4s ease, border-color 0.4s ease; }
+
+    /* GREEN DOT PULSE */
+    @keyframes greenPulse {
+      0%   { box-shadow: 0 0 0 0 rgba(0, 255, 0, 0.5); }
+      70%  { box-shadow: 0 0 0 8px rgba(0, 255, 0, 0); }
+      100% { box-shadow: 0 0 0 0 rgba(0, 255, 0, 0); }
+    }
+    .green-dot {
+      width: 10px; height: 10px; background: #00ff00; border-radius: 50%;
+      animation: greenPulse 2s ease-out infinite; flex-shrink: 0;
+    }
+
+    /* SCROLL PROGRESS */
+    #scroll-progress {
+      position: fixed; right: 10%; top: 50%;
+      transform: translateY(-50%);
+      display: flex; flex-direction: column; gap: 10px;
+      opacity: 0; transition: opacity 1s ease;
+      pointer-events: none; z-index: 500;
+    }
+    .progress-dot {
+      width: 4px; height: 4px; border-radius: 50%;
+      background: var(--fg-line); transition: background 0.3s ease, transform 0.3s ease;
+    }
+    .progress-dot.active { background: var(--fg); transform: scale(1.5); }
+
+    /* SECTION COUNTER */
+    #section-counter {
+      position: fixed; bottom: 40px; right: 10%;
+      font-size: 0.65rem; color: var(--fg-ghost); letter-spacing: 3px;
+      opacity: 0; transition: opacity 1s ease;
+      pointer-events: none; z-index: 500;
+    }
+
+    /* NOISE OVERLAY */
+    #noise-overlay {
+      position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+      pointer-events: none; z-index: 1; opacity: 0.025;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+    }
+
+    /* PROJECT GRID OVERLAY — EXPERIMENTS */
+    #project-grid-isolated {
+      position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+      background: var(--bg); z-index: 20000;
+      display: none; grid-template-columns: 1fr 1fr; grid-template-rows: 1fr 1fr;
+      opacity: 0; transition: opacity 0.4s ease;
+      pointer-events: auto;
+    }
+    .project-entry {
+      text-decoration: none; color: inherit; border: 1px solid var(--fg-line);
+      padding: 40px; display: flex; flex-direction: column; justify-content: center;
+      background: var(--bg); transition: background 0.3s ease;
+    }
+    .project-entry:hover { background: var(--bg-hover); }
+    .close-projects-btn {
+      position: absolute; top: 30px; left: 30px; z-index: 20001;
+      background: var(--bg-inv); color: var(--fg-inv); border: none; padding: 10px 20px;
+      font-family: 'Cascadia Code', monospace; font-size: 0.7rem; font-weight: bold; cursor: none;
+      transition: background 0.4s ease, color 0.4s ease;
+    }
+    .p-meta { font-size: 0.6rem; color: var(--fg-faint); text-transform: uppercase; margin-bottom: 4px; display: block; }
+    .p-name { font-size: 1.1rem; font-weight: bold; display: block; }
+    .p-desc { font-size: 0.75rem; color: var(--fg-mid); margin-top: 4px; line-height: 1.4; }
+
+    /* REAL PROJECTS OVERLAY */
+    #real-project-overlay {
+      position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+      background: var(--bg); z-index: 20000;
+      display: none; opacity: 0; transition: opacity 0.4s ease, background 0.4s ease;
+      pointer-events: auto; overflow: hidden;
+    }
+    .close-real-btn {
+      position: absolute; top: 30px; left: 30px; z-index: 20001;
+      background: var(--bg-inv); color: var(--fg-inv); border: none; padding: 10px 20px;
+      font-family: 'Cascadia Code', monospace; font-size: 0.7rem; font-weight: bold; cursor: none;
+      transition: background 0.4s ease, color 0.4s ease;
+    }
+    .real-projects-grid {
+      display: flex; align-items: center; justify-content: center;
+      width: 100%; height: 100%;
+    }
+    .wip-entry {
+      border: 1px solid var(--fg-line); padding: 60px 80px;
+      display: flex; flex-direction: column; justify-content: center;
+      background: var(--bg); position: relative; overflow: hidden;
+      width: 480px; max-width: 80vw;
+      transition: background 0.4s ease, border-color 0.4s ease;
+    }
+
+    /* WIP ANIMATIONS */
+    @keyframes loadBar {
+      0%   { width: 0%; }  20%  { width: 18%; } 40%  { width: 37%; }
+      55%  { width: 52%; } 70%  { width: 68%; } 85%  { width: 76%; }
+      95%  { width: 82%; } 100% { width: 82%; }
+    }
+    @keyframes blink {
+      0%, 100% { opacity: 1; } 50% { opacity: 0; }
+    }
+    @keyframes scanline {
+      0% { top: -5%; } 100% { top: 105%; }
+    }
+    @keyframes dotPulse {
+      0%, 100% { opacity: 0.2; } 50% { opacity: 1; }
+    }
+    .wip-scanline {
+      position: absolute; left: 0; width: 100%; height: 2px;
+      background: linear-gradient(to right, transparent, rgba(128,128,128,0.08), transparent);
+      animation: scanline 4s linear infinite; pointer-events: none;
+    }
+    .wip-bar-wrap { width: 100%; height: 3px; background: var(--fg-line); margin-top: 20px; }
+    .wip-bar {
+      height: 100%; background: var(--fg);
+      animation: loadBar 8s ease-out forwards;
+      animation-play-state: paused;
+      transition: background 0.4s ease;
+    }
+    .wip-entry:hover .wip-bar { animation-play-state: running; }
+    .wip-dots { display: flex; gap: 6px; margin-top: 14px; }
+    .wip-dot  { width: 5px; height: 5px; border-radius: 50%; background: var(--fg-ghost); }
+    .wip-dot:nth-child(1) { animation: dotPulse 1.4s 0.0s infinite; }
+    .wip-dot:nth-child(2) { animation: dotPulse 1.4s 0.2s infinite; }
+    .wip-dot:nth-child(3) { animation: dotPulse 1.4s 0.4s infinite; }
+    .wip-not-ready { font-size: 0.65rem; color: var(--fg-faint); text-transform: uppercase; letter-spacing: 2px; margin-bottom: 14px; display: block; }
+    .wip-name    { font-size: 1.1rem; font-weight: bold; display: block; margin-bottom: 4px; }
+    .wip-desc    { font-size: 0.75rem; color: var(--fg-mid); line-height: 1.4; }
+    .wip-bar-stuck { width: 50%; height: 100%; background: var(--fg-ghost); }
+    .wip-percent { font-size: 0.6rem; color: var(--fg-ghost); margin-top: 8px; display: block; letter-spacing: 1px; }
+
+    /* SCROLL TIMELINES */
+    @supports (animation-timeline: scroll()) {
+      .intro-build { opacity: 1; visibility: visible; }
+      .sub-text { animation: clockIn linear both; animation-timeline: scroll(); animation-range: 2% 12%; }
+      .intro-build { animation: clockOut linear both; animation-timeline: scroll(); animation-range: 12% 20%; }
+
+      .cv-group {
+        animation: clockIn linear both, clockOut linear both, toggleActive both;
+        animation-timeline: scroll();
+        animation-range: 22% 30%, 36% 44%, 22% 44%;
+      }
+      .real-project-group {
+        animation: clockIn linear both, clockOut linear both, toggleActive both;
+        animation-timeline: scroll();
+        animation-range: 46% 54%, 60% 68%, 46% 68%;
+      }
+      .project-group {
+        animation: clockIn linear both, clockOut linear both, toggleActive both;
+        animation-timeline: scroll();
+        animation-range: 70% 78%, 84% 90%, 70% 90%;
+      }
+      .contact-group {
+        animation: clockIn linear both, toggleActive both;
+        animation-timeline: scroll();
+        animation-range: 92% 98%, 92% 100%;
+      }
+    }
+
+    /* CUSTOM CURSOR */
+    #cursor {
+      width: 12px; height: 12px; background: var(--fg); border-radius: 50%;
+      position: fixed; pointer-events: none; z-index: 99999;
+      transform: translate(-50%, -50%); left: -100px;
+      transition: background 0.4s ease;
+    }
+    .cursor-hover { transform: translate(-50%, -50%) scale(4) !important; background: rgba(51,51,51,0.1) !important; border: 1px solid var(--fg); }
+
+    /* TRIGGER BUTTON — clickable underlined text */
+    .project-trigger-btn {
+      background: none; border: none; border-bottom: 3px solid var(--fg);
+      padding: 0; font: inherit; font-weight: bold; cursor: none;
+      text-align: left; display: inline; color: var(--fg);
+      transition: color 0.4s ease, border-color 0.4s ease;
+    }
+
+    /* EMAIL COPY BUTTON */
+    .email-copy-btn {
+      background: none; border: none; padding: 0; cursor: none;
+      font-family: 'Cascadia Code', monospace; text-align: left;
+      display: block; margin-top: 8px;
+    }
+    .email-text {
+      display: block; font-size: 1.4rem; color: var(--fg); font-weight: bold;
+      border-bottom: 3px solid var(--fg);
+      transition: color 0.3s ease, border-color 0.3s ease;
+    }
+    .email-hint {
+      display: block; font-size: 0.7rem; color: var(--fg-faint);
+      text-transform: uppercase; letter-spacing: 2px; margin-top: 6px;
+      transition: color 0.3s ease;
+    }
+    .email-copy-btn.copied .email-text { color: var(--fg-light); border-color: var(--fg-light); }
+    .email-copy-btn.copied .email-hint { color: var(--fg); }
+
+    /* TOAST */
+    #toast {
+      position: fixed; bottom: 60px; left: 50%; transform: translateX(-50%) translateY(20px);
+      background: var(--bg-inv); color: var(--fg-inv);
+      font-family: 'Cascadia Code', monospace; font-size: 0.75rem;
+      letter-spacing: 2px; text-transform: uppercase;
+      padding: 12px 28px; z-index: 99998;
+      opacity: 0; transition: opacity 0.3s ease, transform 0.3s ease;
+      pointer-events: none;
+    }
+    #toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+  </style>
+</head>
+<body>
+
+  <div id="cursor"></div>
+  <div id="noise-overlay"></div>
+  <div id="toast">// copied to clipboard</div>
+  <button id="main-dark-toggle" onclick="toggleDark()" style="position:fixed;top:30px;right:10%;background:none;border:1px solid var(--fg-faint);color:var(--fg-light);font-family:'Cascadia Code',monospace;font-size:0.65rem;letter-spacing:2px;text-transform:uppercase;padding:7px 14px;cursor:none;z-index:9999;opacity:0;transition:opacity 1s ease,border-color 0.3s ease,color 0.3s ease,background 0.4s ease;pointer-events:none;" onmouseenter="this.style.borderColor='var(--fg)';this.style.color='var(--fg)'" onmouseleave="this.style.borderColor='var(--fg-faint)';this.style.color='var(--fg-light)'">// dark mode</button>
+
+  <!-- SCROLL PROGRESS -->
+  <div id="scroll-progress">
+    <div class="progress-dot"></div>
+    <div class="progress-dot"></div>
+    <div class="progress-dot"></div>
+    <div class="progress-dot"></div>
+    <div class="progress-dot"></div>
+  </div>
+  <div id="section-counter">01 / 05</div>
+
+  <!-- REAL PROJECTS OVERLAY -->
+  <div id="real-project-overlay">
+    <button class="close-real-btn" onclick="hideRealProjects()">BACK TO MAIN</button>
+    <div class="real-projects-grid">
+      <div class="wip-entry">
+        <span class="wip-not-ready">build incomplete</span>
+        <span class="wip-name">audit tool</span>
+        <span class="wip-desc">Still building this. The idea is to scan a codebase for package risks and compliance issues — the kind of thing I'd want to exist at a real job.</span>
+        <div class="wip-bar-wrap">
+          <div class="wip-bar-stuck"></div>
+        </div>
+        <span class="wip-percent">50% — check back later in 3 months</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- EXPERIMENTS OVERLAY -->
+  <div id="project-grid-isolated">
+    <button class="close-projects-btn" onclick="hideProjects()">BACK TO MAIN</button>
+    <a href="Experiments/focus.html" class="project-entry"><span class="p-meta">01 / JavaScript Timing</span><span class="p-name">Focus Flow</span><p class="p-desc">A countdown timer for work sessions. It uses basic intervals to switch between work and break states.</p></a>
+    <a href="Experiments/matrix.html" class="project-entry"><span class="p-meta">02 / DOM Practice</span><span class="p-name">Shelf</span><p class="p-desc">A basic input-based list. It is just an exercise in adding and deleting text entries on a page.</p></a>
+    <a href="Experiments/subs.html" class="project-entry"><span class="p-meta">03 / Math & Logic</span><span class="p-name">Subs vs Life</span><p class="p-desc">A calculator that compares subscription costs against income to see the long-term financial impact.</p></a>
+    <a href="Experiments/weather.html" class="project-entry"><span class="p-meta">04 / Form Handling</span><span class="p-name">Env-Log</span><p class="p-desc">A manual logger that records user-inputted weather and focus data into a table on the screen.</p></a>
+  </div>
+
+  <!-- DISCLAIMER -->
+  <div id="disclaimer-layer">
+    <button id="dark-toggle" onclick="toggleDark()">// dark mode</button>
+    <div class="disclaimer-box">
+      <h1>Just a heads-up</h1>
+      <p>Fair warning — I'm a student, not a professional. This site reflects that honestly. It's experimental, built through research and bothering people for help. I think my biggest strength isn't having all the answers, but being willing to go out and find them.</p>
+      <button class="enter-btn" onclick="enterSite()">Enter anyway</button>
+    </div>
+
+    <!-- SCROLLING COMPANIES -->
+    <div id="companies-ticker">
+      <p class="ticker-label">// people i'd love to work with — when i'm ready</p>
+      <div class="ticker-track" id="ticker-track">
+        <!-- items injected by JS so we can duplicate for seamless loop -->
+      </div>
+    </div>
+  </div>
+
+  <!-- MAIN SCROLL CONTENT -->
+  <div class="viewport" id="main-content">
+    <div class="intro-build">
+      <span class="clock-item intro-text">Hi,</span>
+      <span class="clock-item intro-text">My name is Abraham Danjuma</span>
+      <span class="clock-item sub-text" id="typing-text"></span>
+    </div>
+
+    <div class="cv-group">
+      <span class="clock-item cv-line">my basic, low-experience <a href="ABRAHAM_DANJUMA_CV.pdf" class="cv-link" download="ABRAHAM_DANJUMA_CV.pdf">CV</a></span>
+    </div>
+
+    <div class="real-project-group">
+      <span class="section-label">// Projects</span>
+      <span class="intro-text clock-item"><button class="project-trigger-btn" onclick="showRealProjects()">What am i working on?</button></span>
+    </div>
+
+    <div class="project-group">
+      <span class="section-label">// Selected Experiments</span>
+      <span class="intro-text clock-item"><button class="project-trigger-btn" onclick="showProjects()">Built out of boredom</button></span>
+    </div>
+
+    <div class="contact-group">
+      <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 15px;">
+        <div class="green-dot"></div>
+        <span style="font-size: 0.8rem; color: #999; text-transform: uppercase;">currently seeking placement</span>
+      </div>
+      <span class="clock-item intro-text">Seeking a T-Level placement.</span>
+      <button class="email-copy-btn clock-item" onclick="copyEmail(this)">
+        <span class="email-text">25043930@activatelearning.ac.uk</span>
+        <span class="email-hint">// click to copy</span>
+      </button>
+    </div>
+  </div>
+
+  <script>
+    // ── Copy email ────────────────────────────────────────────
+    const toast = document.getElementById('toast');
+    let toastTimer;
+
+    function showToast() {
+      clearTimeout(toastTimer);
+      toast.classList.add('show');
+      toastTimer = setTimeout(() => toast.classList.remove('show'), 2500);
+    }
+
+    function copyEmail(btn) {
+      const email = '25043930@activatelearning.ac.uk';
+      const hint = btn.querySelector('.email-hint');
+
+      function onSuccess() {
+        btn.classList.add('copied');
+        hint.textContent = '// copied to clipboard';
+        showToast();
+        setTimeout(() => {
+          btn.classList.remove('copied');
+          hint.textContent = '// click to copy';
+        }, 2500);
+      }
+
+      if (navigator.clipboard && window.isSecureContext) {
+        navigator.clipboard.writeText(email).then(onSuccess);
+      } else {
+        const ta = document.createElement('textarea');
+        ta.value = email;
+        ta.style.position = 'fixed';
+        ta.style.opacity = '0';
+        document.body.appendChild(ta);
+        ta.focus();
+        ta.select();
+        try { document.execCommand('copy'); onSuccess(); } catch(e) {}
+        document.body.removeChild(ta);
+      }
+    }
+
+    // ── Companies ticker ──────────────────────────────────────
+    const companies = [
+      { name: 'Lockheed Martin', file: 'lockheed-martin-logo.svg', highlight: false, tall: true },
+      { name: 'Cloudflare',      file: 'cloudflare-1.svg',         highlight: false },
+      { name: 'You',             file: null,                        highlight: true  },
+      { name: 'Vercel',          file: 'vercel.svg',               highlight: false },
+      { name: 'Notion',          file: 'notion-2.svg',             highlight: false },
+      { name: 'Figma',           file: 'figma-icon.svg',           highlight: false },
+    ];
+    const track = document.getElementById('ticker-track');
+    // Duplicate for seamless infinite loop
+    [...companies, ...companies].forEach(c => {
+      const item = document.createElement('div');
+      item.className = 'ticker-item' + (c.highlight ? ' highlight' : '');
+      if (c.file) {
+        const img = document.createElement('img');
+        img.src = 'logos/' + c.file;
+        img.alt = c.name;
+        if (c.tall) img.classList.add('logo-tall');
+        item.appendChild(img);
+      } else {
+        const span = document.createElement('span');
+        span.textContent = c.name;
+        item.appendChild(span);
+      }
+      track.appendChild(item);
+    });
+
+    // ── Typing effect ─────────────────────────────────────────
+    const phrases = [
+      "CS student @ Reading College",
+      "Seeking a T-Level placement",
+      "Building things, breaking things"
+    ];
+    let phraseIndex = 0, charIndex = 0, deleting = false;
+    const typingEl = document.getElementById("typing-text");
+    function type() {
+      const current = phrases[phraseIndex];
+      if (!deleting) {
+        typingEl.textContent = current.slice(0, charIndex++);
+        if (charIndex > current.length) { deleting = true; setTimeout(type, 1500); return; }
+      } else {
+        typingEl.textContent = current.slice(0, charIndex--);
+        if (charIndex < 0) { deleting = false; phraseIndex = (phraseIndex + 1) % phrases.length; setTimeout(type, 400); return; }
+      }
+      setTimeout(type, deleting ? 40 : 70);
+    }
+    type();
+
+    const cursor       = document.getElementById('cursor');
+    const layer        = document.getElementById('disclaimer-layer');
+    const content      = document.getElementById('main-content');
+    const projectSection     = document.getElementById('project-grid-isolated');
+    const realProjectSection = document.getElementById('real-project-overlay');
+    const progressEl   = document.getElementById('scroll-progress');
+    const counterEl    = document.getElementById('section-counter');
+    const dots         = document.querySelectorAll('.progress-dot');
+
+    // ── Cursor ──────────────────────────────────────────────
+    window.addEventListener('mousemove', (e) => {
+      cursor.style.left = e.clientX + 'px';
+      cursor.style.top  = e.clientY + 'px';
+    });
+
+    // ── Scroll: progress dots + section counter ──────────────
+    const sectionLabels = ['01', '02', '03', '04', '05'];
+    const sectionBreaks = [0, 0.22, 0.46, 0.70, 0.92];
+
+    // Each group, its active scroll range, and its clickable children selectors
+    const groups = [
+      { el: document.querySelector('.cv-group'),           range: [0.22, 0.44] },
+      { el: document.querySelector('.real-project-group'), range: [0.46, 0.68] },
+      { el: document.querySelector('.project-group'),      range: [0.70, 0.90] },
+      { el: document.querySelector('.contact-group'),      range: [0.92, 1.01] },
+    ];
+
+    function updateScroll() {
+      const pct = window.scrollY / (document.body.scrollHeight - window.innerHeight);
+      let current = 0;
+      sectionBreaks.forEach((b, i) => { if (pct >= b) current = i; });
+      dots.forEach((d, i) => d.classList.toggle('active', i === current));
+      counterEl.textContent = sectionLabels[current] + ' / 05';
+
+      // The viewport wrapper itself must allow pointer-events when any group is active
+      const anyActive = groups.some(({ range }) => pct >= range[0] && pct <= range[1]);
+      content.style.pointerEvents = anyActive ? 'auto' : 'none';
+
+      // Per-group: enable the group and ALL descendant interactive elements
+      groups.forEach(({ el, range }) => {
+        const active = pct >= range[0] && pct <= range[1];
+        el.style.pointerEvents = active ? 'auto' : 'none';
+        el.querySelectorAll('a, button, [onclick]').forEach(child => {
+          child.style.pointerEvents = active ? 'auto' : 'none';
+        });
+      });
+    }
+
+    window.addEventListener('scroll', updateScroll);
+
+    // ── Overlays ─────────────────────────────────────────────
+    function showRealProjects() {
+      realProjectSection.style.display = 'block';
+      setTimeout(() => { realProjectSection.style.opacity = '1'; }, 10);
+      refreshHovers();
+    }
+    function hideRealProjects() {
+      realProjectSection.style.opacity = '0';
+      setTimeout(() => { realProjectSection.style.display = 'none'; }, 400);
+    }
+    function showProjects() {
+      projectSection.style.display = 'grid';
+      setTimeout(() => { projectSection.style.opacity = '1'; }, 10);
+      refreshHovers();
+    }
+    function hideProjects() {
+      projectSection.style.opacity = '0';
+      setTimeout(() => { projectSection.style.display = 'none'; }, 400);
+      if (window.location.hash === '#projects') history.replaceState(null, null, ' ');
+    }
+
+    // ── Cursor hover effects ──────────────────────────────────
+    function refreshHovers() {
+      document.querySelectorAll('a, button, .project-entry, .wip-entry').forEach(el => {
+        el.onmouseenter = () => cursor.classList.add('cursor-hover');
+        el.onmouseleave = () => cursor.classList.remove('cursor-hover');
+      });
+      // Save scroll position when clicking into an experiment
+      document.querySelectorAll('.project-entry').forEach(el => {
+        el.addEventListener('click', () => {
+          sessionStorage.setItem('scrollPos', window.scrollY);
+        });
+      });
+    }
+
+    // ── Site entry ────────────────────────────────────────────
+    function enterSite() {
+      layer.style.opacity = '0';
+      setTimeout(() => {
+        layer.style.visibility = 'hidden';
+        content.style.opacity  = '1';
+        progressEl.style.opacity = '1';
+        counterEl.style.opacity  = '1';
+        mainToggle.style.opacity = '1';
+        mainToggle.style.pointerEvents = 'auto';
+        document.documentElement.style.overflowY = 'auto';
+      }, 800);
+      refreshHovers();
+    }
+
+    // ── Return from experiment (skip disclaimer) ──────────────
+    window.addEventListener('load', () => {
+      if (window.location.hash === '#projects') {
+        layer.style.display = 'none';
+        content.style.opacity    = '1';
+        progressEl.style.opacity = '1';
+        counterEl.style.opacity  = '1';
+        mainToggle.style.opacity = '1';
+        mainToggle.style.pointerEvents = 'auto';
+        document.documentElement.style.overflowY = 'auto';
+
+        // Restore scroll position if we saved one
+        const savedScroll = sessionStorage.getItem('scrollPos');
+        if (savedScroll) {
+          window.scrollTo(0, parseInt(savedScroll));
+          sessionStorage.removeItem('scrollPos');
+          updateScroll();
+        }
+
+        showProjects();
+      }
+      refreshHovers();
+    });
+    // ── Dark mode ─────────────────────────────────────────────
+    const mainToggle = document.getElementById('main-dark-toggle');
+    const discToggle = document.getElementById('dark-toggle');
+
+    function applyDark(dark) {
+      document.documentElement.classList.toggle('dark', dark);
+      const label = dark ? '// light mode' : '// dark mode';
+      if (mainToggle) mainToggle.textContent = label;
+      if (discToggle) discToggle.textContent = label;
+    }
+
+    function toggleDark() {
+      const nowDark = !document.documentElement.classList.contains('dark');
+      localStorage.setItem('darkMode', nowDark ? '1' : '0');
+      applyDark(nowDark);
+    }
+
+    // Apply saved preference immediately
+    applyDark(localStorage.getItem('darkMode') === '1');
+
+  </script>
+</body>
+</html>

@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>01. Subscription Audit</title>
+    <style>
+        /* ── DARK MODE VARS ─────────────────────────────────────── */
+        :root {
+          --bg: #fff; --bg-card: #f9f9f9; --fg: #333; --fg-mid: #555;
+          --fg-light: #888; --fg-ghost: #ccc; --fg-line: #eee;
+          --fg-inv: #fff; --bg-inv: #333; --border: #333;
+        }
+        html.dark {
+          --bg: #111; --bg-card: #1a1a1a; --fg: #e8e8e8; --fg-mid: #999;
+          --fg-light: #666; --fg-ghost: #444; --fg-line: #2a2a2a;
+          --fg-inv: #111; --bg-inv: #e8e8e8; --border: #e8e8e8;
+        }
+        html, body { background: var(--bg); color: var(--fg); transition: background 0.4s ease, color 0.4s ease; }
+
+        #dark-toggle {
+          position: fixed; top: 20px; right: 5%;
+          background: none; border: 1px solid var(--fg-ghost);
+          color: var(--fg-light); font-family: 'Cascadia Code', monospace;
+          font-size: 0.6rem; letter-spacing: 2px; text-transform: uppercase;
+          padding: 6px 12px; cursor: pointer; z-index: 9999;
+          transition: border-color 0.3s, color 0.3s;
+        }
+        #dark-toggle:hover { border-color: var(--fg); color: var(--fg); }
+
+        body { font-family: 'Cascadia Code', monospace; padding: 10%; line-height: 1.6; }
+        .container { max-width: 650px; }
+        
+        .setup { margin-bottom: 30px; }
+        input { border: none; border-bottom: 2px solid var(--fg); padding: 5px; font-family: inherit; outline: none; font-size: 1rem; margin-bottom: 10px; transition: border-color 0.3s, background 0.4s, color 0.4s; background: transparent; color: var(--fg); }
+        input:focus { border-bottom-color: var(--fg-light); }
+        
+        .add-row { display: flex; gap: 10px; margin-top: 20px; }
+        .add-row input { flex-grow: 1; }
+        
+        button { background: var(--bg-inv); color: var(--fg-inv); border: none; padding: 10px 20px; font-family: inherit; cursor: pointer; font-weight: bold; transition: opacity 0.2s; }
+        button:hover { opacity: 0.7; }
+
+        #sub-list { margin: 30px 0; list-style: none; padding: 0; border-top: 1px solid var(--fg-line); }
+        .sub-item { display: flex; justify-content: space-between; padding: 12px 0; border-bottom: 1px solid var(--fg-line); font-size: 0.9rem; }
+        .remove-btn { color: var(--fg-ghost); cursor: pointer; font-size: 0.7rem; border: 1px solid var(--fg-line); padding: 2px 5px; margin-left: 10px; background: none; font-family: inherit; transition: background 0.2s, color 0.2s, border-color 0.2s; }
+        .remove-btn:hover { background: #ff4444; color: #fff; border-color: #ff4444; }
+
+        .dashboard { margin-top: 50px; background: var(--bg-card); padding: 30px; border: 1px solid var(--border); transition: background 0.4s, border-color 0.4s; }
+        .stat-group { margin-bottom: 20px; }
+        .label { font-size: 0.7rem; text-transform: uppercase; color: var(--fg-light); letter-spacing: 1px; }
+        .value { font-size: 1.8rem; font-weight: bold; display: block; }
+        
+        .progress-container { width: 100%; height: 8px; background: var(--fg-line); margin-top: 10px; }
+        #progress-bar { width: 0%; height: 100%; background: var(--fg); transition: width 0.5s ease; }
+
+        .comparison { font-size: 0.85rem; color: var(--fg-mid); font-style: italic; margin-top: 10px; display: block; }
+        .back {
+          display: inline-block; margin-bottom: 40px;
+          background: var(--bg-inv); color: var(--fg-inv); border: none;
+          padding: 10px 20px; font-family: 'Cascadia Code', monospace;
+          font-size: 0.7rem; font-weight: bold; text-transform: uppercase;
+          text-decoration: none; letter-spacing: 1px; cursor: pointer; transition: opacity 0.2s;
+        }
+        .back:hover { opacity: 0.7; }
+    </style>
+</head>
+<body>
+    <button id="dark-toggle" onclick="toggleDark()">// dark mode</button>
+    <a href="../index.html#projects" class="back">BACK TO MAIN</a>
+    <div class="container">
+        <h1>01. subscription audit</h1>
+        <p>// analyzing the financial weight of digital services</p>
+        
+        <div class="setup">
+            <span>Hourly wage: £</span>
+            <input type="number" id="wage" style="width: 80px;" value="12" oninput="updateAll()">
+        </div>
+
+        <div class="add-row">
+            <input type="text" id="sub-name" placeholder="Service Name">
+            <input type="number" id="sub-cost" placeholder="£/mo" style="width: 80px;">
+            <button onclick="addSub()">ADD</button>
+        </div>
+
+        <ul id="sub-list"></ul>
+        
+        <div class="dashboard">
+            <div class="stat-group">
+                <span class="label">Total Monthly Drain</span>
+                <span class="value" id="total-cost">£0.00</span>
+            </div>
+            
+            <div class="stat-group">
+                <span class="label">Work-Life Tax</span>
+                <span class="value" id="res">0.00 Hours</span>
+                <div class="progress-container"><div id="progress-bar"></div></div>
+                <span class="comparison" id="compare-text">Waiting for data...</span>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let subscriptions = [
+            { name: "Netflix", cost: 10.99 },
+            { name: "Spotify", cost: 9.99 }
+        ];
+
+        function addSub() {
+            const name = document.getElementById('sub-name').value;
+            const cost = parseFloat(document.getElementById('sub-cost').value);
+            if (name && cost) {
+                subscriptions.push({ name, cost });
+                document.getElementById('sub-name').value = '';
+                document.getElementById('sub-cost').value = '';
+                updateAll();
+            }
+        }
+
+        function removeSub(index) {
+            subscriptions.splice(index, 1);
+            updateAll();
+        }
+
+        function updateAll() {
+            const list = document.getElementById('sub-list');
+            const wage = parseFloat(document.getElementById('wage').value) || 0;
+            let total = 0;
+
+            list.innerHTML = '';
+            subscriptions.forEach((sub, i) => {
+                total += sub.cost;
+                const li = document.createElement('li');
+                li.className = 'sub-item';
+                li.innerHTML = `<span>${sub.name}</span>
+                    <span>£${sub.cost.toFixed(2)}<button class="remove-btn" onclick="removeSub(${i})">DELETE</button></span>`;
+                list.appendChild(li);
+            });
+
+            const hours = wage > 0 ? (total / wage) : 0;
+            const yearly = total * 12;
+
+            document.getElementById('total-cost').innerText = `£${total.toFixed(2)}`;
+            document.getElementById('res').innerText = `${hours.toFixed(1)} Hours`;
+
+            const percent = Math.min((hours / 40) * 100, 100);
+            document.getElementById('progress-bar').style.width = percent + '%';
+
+            let compare = '';
+            if (yearly > 1000) compare = `That is £${yearly.toFixed(0)} a year—basically a high-end MacBook.`;
+            else if (yearly > 500) compare = `That is £${yearly.toFixed(0)} a year—a decent holiday or a new console.`;
+            else if (yearly > 0) compare = `That is £${yearly.toFixed(0)} a year. Not bad, but it adds up.`;
+            else compare = 'The stack is currently empty.';
+
+            document.getElementById('compare-text').innerText = compare;
+        }
+
+        updateAll();
+
+        // ── Dark mode sync ────────────────────────────────────
+        const darkToggle = document.getElementById('dark-toggle');
+        function applyDark(dark) {
+            document.documentElement.classList.toggle('dark', dark);
+            darkToggle.textContent = dark ? '// light mode' : '// dark mode';
+        }
+        function toggleDark() {
+            const nowDark = !document.documentElement.classList.contains('dark');
+            localStorage.setItem('darkMode', nowDark ? '1' : '0');
+            applyDark(nowDark);
+        }
+        applyDark(localStorage.getItem('darkMode') === '1');
+    </script>
+</body>
+</html>

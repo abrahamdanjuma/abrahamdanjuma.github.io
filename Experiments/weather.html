@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>04. Env-Log | Privacy-First Weather</title>
+    <style>
+        /* ── DARK MODE VARS ─────────────────────────────────────── */
+        :root {
+          --bg: #fff; --bg-card: #f9f9f9; --fg: #333; --fg-mid: #555;
+          --fg-light: #666; --fg-faint: #999; --fg-ghost: #bbb;
+          --fg-line: #eee; --fg-inv: #fff; --bg-inv: #333; --border: #ccc;
+        }
+        html.dark {
+          --bg: #111; --bg-card: #1a1a1a; --fg: #e8e8e8; --fg-mid: #aaa;
+          --fg-light: #888; --fg-faint: #666; --fg-ghost: #555;
+          --fg-line: #2a2a2a; --fg-inv: #111; --bg-inv: #e8e8e8; --border: #444;
+        }
+        html, body { background: var(--bg); color: var(--fg); transition: background 0.4s ease, color 0.4s ease; }
+
+        #dark-toggle {
+          position: fixed; top: 20px; right: 5%;
+          background: none; border: 1px solid var(--fg-ghost);
+          color: var(--fg-faint); font-family: 'Cascadia Code', monospace;
+          font-size: 0.6rem; letter-spacing: 2px; text-transform: uppercase;
+          padding: 6px 12px; cursor: pointer; z-index: 9999;
+          transition: border-color 0.3s, color 0.3s;
+        }
+        #dark-toggle:hover { border-color: var(--fg); color: var(--fg); }
+
+        body { font-family: 'Cascadia Code', monospace; padding: 5% 10%; line-height: 1.6; }
+        .back {
+          display: inline-block; margin-bottom: 20px;
+          background: var(--bg-inv); color: var(--fg-inv); border: none;
+          padding: 10px 20px; font-family: 'Cascadia Code', monospace;
+          font-size: 0.7rem; font-weight: bold; text-transform: uppercase;
+          text-decoration: none; letter-spacing: 1px; cursor: pointer; transition: opacity 0.2s;
+        }
+        .back:hover { opacity: 0.7; }
+        
+        .main-layout { display: grid; grid-template-columns: 1.2fr 0.8fr; gap: 60px; align-items: start; }
+
+        .weather-card { border: 2px solid var(--fg); padding: 25px; background: var(--bg-card); box-shadow: 8px 8px 0px var(--fg-line); margin-bottom: 20px; transition: background 0.4s, border-color 0.4s, box-shadow 0.4s; }
+        h1 { margin: 0; font-size: 1.4rem; text-transform: uppercase; letter-spacing: -1px; }
+        
+        .app-purpose { font-size: 0.7rem; color: var(--fg-light); margin-bottom: 20px; padding: 10px; background: var(--bg); border-left: 3px solid var(--fg); font-style: italic; transition: background 0.4s, border-color 0.4s; }
+
+        .input-row { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px; }
+        .input-group { margin-bottom: 15px; }
+        label { display: block; font-size: 0.65rem; text-transform: uppercase; color: var(--fg-faint); margin-bottom: 5px; font-weight: bold; }
+        
+        select, input { width: 100%; border: 1px solid var(--border); padding: 10px; font-family: inherit; font-size: 0.9rem; outline: none; background: var(--bg); color: var(--fg); box-sizing: border-box; transition: background 0.4s, border-color 0.4s, color 0.4s; }
+
+        .btn-log { width: 100%; background: var(--bg-inv); color: var(--fg-inv); border: none; padding: 12px; cursor: pointer; font-weight: bold; text-transform: uppercase; transition: opacity 0.2s; }
+        .btn-log:hover { opacity: 0.7; }
+
+        .history-container { border: 2px solid var(--fg-line); background: var(--bg); padding: 15px; max-height: 350px; overflow-y: auto; margin-top: 10px; transition: background 0.4s, border-color 0.4s; }
+        .history-item { padding: 10px 0; border-bottom: 1px dashed var(--fg-line); display: flex; justify-content: space-between; align-items: center; }
+        .history-item:last-child { border-bottom: none; }
+        .weather-icon { font-size: 1.1rem; margin-right: 12px; }
+        .history-text { font-size: 0.8rem; color: var(--fg-mid); }
+        .history-tag { font-size: 0.6rem; background: var(--bg-inv); color: var(--fg-inv); padding: 2px 6px; border-radius: 2px; margin-left: 8px; text-transform: uppercase; transition: background 0.4s, color 0.4s; }
+        .history-meta { font-size: 0.65rem; color: var(--fg-ghost); text-align: right; line-height: 1.2; }
+
+        .sidebar { border-left: 1px solid var(--fg-line); padding-left: 40px; }
+        .philosophy-note h3 { font-size: 0.8rem; text-transform: uppercase; color: var(--fg); margin-top: 0; border-bottom: 1px solid var(--fg); display: inline-block; margin-bottom: 15px; }
+        .philosophy-note p { font-size: 0.9rem; color: var(--fg-mid); margin-bottom: 12px; }
+
+        .clear-btn { background: none; border: 1px solid var(--fg-line); color: var(--fg-ghost); cursor: pointer; font-size: 0.7rem; width: fit-content; margin-top: 20px; font-family: inherit; padding: 5px 10px; transition: color 0.3s, border-color 0.3s; }
+        .clear-btn:hover { color: #ff4444; border-color: #ff4444; }
+
+        @media (max-width: 850px) {
+            .main-layout { grid-template-columns: 1fr; }
+            .sidebar { border-left: none; padding-left: 0; margin-top: 40px; }
+            .input-row { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+
+    <button id="dark-toggle" onclick="toggleDark()">// dark mode</button>
+    <a href="../index.html#projects" class="back">BACK TO MAIN</a>
+
+    <div class="main-layout">
+        
+        <div class="tool-section">
+            <div class="weather-card">
+                <h1>Environment Log</h1>
+                <div class="app-purpose">
+                    A manual tool for tracking workspace context. No outside tracking.
+                </div>
+                
+                <div class="input-row">
+                    <div class="input-group">
+                        <label>The Sky</label>
+                        <select id="condition">
+                            <option value="☀️">Clear / Sunny</option>
+                            <option value="☁️">Overcast</option>
+                            <option value="🌧️">Rainy</option>
+                            <option value="⛈️">Stormy</option>
+                            <option value="🌙">Night</option>
+                        </select>
+                    </div>
+
+                    <div class="input-group">
+                        <label>My Focus</label>
+                        <select id="focus-mode">
+                            <option value="Deep Work">Deep Work</option>
+                            <option value="Productive">Productive</option>
+                            <option value="Learning">Learning</option>
+                            <option value="Debugging">Debugging</option>
+                            <option value="Chilling">Chilling</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="input-group">
+                    <label>Temp (°C)</label>
+                    <input type="number" id="temp" value="21">
+                </div>
+
+                <div class="input-group">
+                    <label>Quick Note</label>
+                    <input type="text" id="vibe" placeholder="e.g. Headphones on">
+                </div>
+
+                <button class="btn-log" onclick="logEnvironment()">Log Snapshot</button>
+            </div>
+
+            <label style="font-size: 0.65rem; text-transform: uppercase; color: #999; font-weight: bold;">Past Entries</label>
+            <div class="history-container" id="log-history"></div>
+        </div>
+
+        <div class="sidebar">
+            <div class="philosophy-note">
+                <h3>Why this is manual</h3>
+                <p>I know it's easier to just use an API to get the weather, but I don't really like how much data basic apps take from us. I built this because I wanted a tool that feels "quiet" and stays completely on my machine.</p>
+                <p>It’s not perfect, but it’s a simple way for me to track my work sessions without any tracking or servers involved. It's just a personal project to see if I could make something useful and private at the same time.</p>
+            </div>
+            <button class="clear-btn" onclick="clearLogs()">Delete Local Data</button>
+        </div>
+
+    </div>
+
+    <script>
+        let envLogs = JSON.parse(localStorage.getItem('env_logs')) || [];
+
+        window.onload = () => { renderLogs(); };
+
+        function logEnvironment() {
+            const condEmoji = document.getElementById('condition').value;
+            const condText = document.getElementById('condition').options[document.getElementById('condition').selectedIndex].text;
+            const focus = document.getElementById('focus-mode').value;
+            const temp = document.getElementById('temp').value;
+            const userNote = document.getElementById('vibe').value.trim();
+            
+            const finalVibe = userNote || `Logged in ${condText} conditions.`;
+            
+            const newLog = {
+                condition: condEmoji,
+                focus: focus,
+                temp: temp,
+                vibe: finalVibe,
+                time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+                date: new Date().toLocaleDateString()
+            };
+
+            envLogs.unshift(newLog);
+            localStorage.setItem('env_logs', JSON.stringify(envLogs));
+            renderLogs();
+            document.getElementById('vibe').value = '';
+        }
+
+        function renderLogs() {
+            const container = document.getElementById('log-history');
+            container.innerHTML = '';
+            
+            if (envLogs.length === 0) {
+                container.innerHTML = '<p style="color:#ccc; font-size:0.8rem; padding: 20px; text-align: center;">No snapshots yet.</p>';
+                return;
+            }
+
+            envLogs.forEach(log => {
+                const item = document.createElement('div');
+                item.className = 'history-item';
+                item.innerHTML = `
+                    <div style="display:flex; align-items:center;">
+                        <span class="weather-icon">${log.condition}</span>
+                        <div class="history-text">
+                            <strong>${log.temp}°C</strong> — ${log.vibe}
+                            <span class="history-tag">${log.focus}</span>
+                        </div>
+                    </div>
+                    <div class="history-meta">${log.time}<br>${log.date}</div>
+                `;
+                container.appendChild(item);
+            });
+        }
+
+        function clearLogs() {
+            if (confirm("Wipe history?")) {
+                localStorage.removeItem('env_logs');
+                envLogs = [];
+                renderLogs();
+            }
+        }
+
+        // ── Dark mode sync ────────────────────────────────────
+        const darkToggle = document.getElementById('dark-toggle');
+        function applyDark(dark) {
+            document.documentElement.classList.toggle('dark', dark);
+            darkToggle.textContent = dark ? '// light mode' : '// dark mode';
+        }
+        function toggleDark() {
+            const nowDark = !document.documentElement.classList.contains('dark');
+            localStorage.setItem('darkMode', nowDark ? '1' : '0');
+            applyDark(nowDark);
+        }
+        applyDark(localStorage.getItem('darkMode') === '1');
+    </script>
+</body>
+</html>

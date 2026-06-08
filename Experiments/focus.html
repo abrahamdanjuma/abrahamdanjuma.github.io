@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>02. Focus | Fluid Timer</title>
+    <style>
+        /* ── DARK MODE VARS ─────────────────────────────────────── */
+        :root {
+          --bg: #fff; --bg-off: #f0f0f0; --fg: #333; --fg-mid: #666;
+          --fg-light: #999; --fg-faint: #bbb; --fg-ghost: #ccc;
+          --fg-line: #eee; --fg-inv: #fff; --bg-inv: #333;
+        }
+        html.dark {
+          --bg: #111; --bg-off: #1d1d1d; --fg: #e8e8e8; --fg-mid: #999;
+          --fg-light: #777; --fg-faint: #555; --fg-ghost: #444;
+          --fg-line: #2a2a2a; --fg-inv: #111; --bg-inv: #e8e8e8;
+        }
+        html, body { background: var(--bg); color: var(--fg); transition: background 0.4s ease, color 0.4s ease; }
+
+        #dark-toggle {
+          position: fixed; top: 20px; right: 5%;
+          background: none; border: 1px solid var(--fg-faint);
+          color: var(--fg-light); font-family: 'Cascadia Code', monospace;
+          font-size: 0.6rem; letter-spacing: 2px; text-transform: uppercase;
+          padding: 6px 12px; cursor: pointer; z-index: 9999;
+          transition: border-color 0.3s, color 0.3s;
+        }
+        #dark-toggle:hover { border-color: var(--fg); color: var(--fg); }
+
+        body { font-family: 'Cascadia Code', monospace; padding: 5% 10%; line-height: 1.6; }
+        
+        /* The Alarm State */
+        body.timer-done { animation: flash-bg 0.8s infinite; }
+        @keyframes flash-bg { 
+            0% { background: var(--bg); } 
+            50% { background: var(--bg-off); } 
+            100% { background: var(--bg); } 
+        }
+
+        .main-layout { display: grid; grid-template-columns: 1.2fr 0.8fr; gap: 60px; align-items: start; }
+
+        .timer-section { max-width: 500px; }
+        .session-type { font-size: 0.8rem; color: var(--fg-light); text-transform: uppercase; margin-bottom: 10px; }
+        #time { font-size: 6rem; font-weight: bold; line-height: 1; margin-bottom: 10px; }
+        
+        .flow-container { width: 100%; height: 4px; background: var(--fg-line); margin: 25px 0; }
+        #flow-bar { width: 0%; height: 100%; background: var(--fg); transition: width 1s linear; }
+
+        input[type="range"] { width: 100%; accent-color: var(--fg); cursor: pointer; margin-top: 15px; }
+        .presets { display: flex; gap: 8px; margin-top: 10px; }
+        .preset-btn { font-size: 0.7rem; border: 1px solid var(--fg-line); background: none; padding: 4px 8px; color: var(--fg-light); cursor: pointer; font-family: inherit; transition: border-color 0.3s, color 0.3s; }
+        .preset-btn:hover { border-color: var(--fg); color: var(--fg); }
+
+        input[type="text"] { border: none; border-bottom: 2px solid var(--fg); padding: 12px 0; font-family: inherit; width: 100%; outline: none; font-size: 1.1rem; margin: 25px 0; background: transparent; color: var(--fg); }
+        
+        .btn-main { background: var(--bg-inv); color: var(--fg-inv); border: none; padding: 15px; width: 100%; font-family: inherit; font-weight: bold; cursor: pointer; text-transform: uppercase; letter-spacing: 1px; transition: opacity 0.2s; }
+        .btn-main:hover { opacity: 0.8; }
+        .btn-main.alarm-active { background: #ff4444; color: #fff; }
+
+        .sidebar { border-left: 1px solid var(--fg-line); padding-left: 40px; }
+        .philosophy-note { margin-bottom: 40px; }
+        .philosophy-note h3 { font-size: 0.8rem; text-transform: uppercase; color: var(--fg); margin-top: 0; letter-spacing: 1px; }
+        .philosophy-note p { font-size: 0.85rem; color: var(--fg-mid); font-style: italic; margin-bottom: 15px; }
+
+        .log-header { font-size: 0.7rem; text-transform: uppercase; color: var(--fg-faint); letter-spacing: 1px; margin-bottom: 10px; display: block; }
+        .log-entry { display: flex; justify-content: space-between; font-size: 0.85rem; padding: 8px 0; border-bottom: 1px dashed var(--fg-line); color: var(--fg-mid); }
+
+        .back {
+          display: inline-block; margin-bottom: 40px;
+          background: var(--bg-inv); color: var(--fg-inv); border: none;
+          padding: 10px 20px; font-family: 'Cascadia Code', monospace;
+          font-size: 0.7rem; font-weight: bold; text-transform: uppercase;
+          text-decoration: none; letter-spacing: 1px; cursor: pointer;
+          transition: opacity 0.2s;
+        }
+        .back:hover { opacity: 0.7; }
+
+        @media (max-width: 800px) {
+            .main-layout { grid-template-columns: 1fr; }
+            .sidebar { border-left: none; padding-left: 0; margin-top: 40px; }
+        }
+    </style>
+</head>
+<body>
+
+    <button id="dark-toggle" onclick="toggleDark()">// dark mode</button>
+    <a href="../index.html#projects" class="back">BACK TO MAIN</a>
+    
+    <div class="main-layout">
+        <div class="timer-section">
+            <div class="session-type">// focus system v1.0</div>
+            <div id="time">25:00</div>
+            <div class="flow-container"><div id="flow-bar"></div></div>
+
+            <div id="setup">
+                <input type="range" id="duration-slider" min="1" max="60" value="25" oninput="adjustDuration(this.value)">
+                <div class="presets">
+                    <button class="preset-btn" onclick="adjustDuration(7)">7m</button>
+                    <button class="preset-btn" onclick="adjustDuration(19)">19m</button>
+                    <button class="preset-btn" onclick="adjustDuration(60)">60m</button>
+                </div>
+                <input type="text" id="task-name" placeholder="Objective (e.g., Studying for a test)">
+            </div>
+
+            <button class="btn-main" id="start-btn" onclick="toggleTimer()">START SESSION</button>
+        </div>
+
+        <div class="sidebar">
+            <div class="philosophy-note">
+                <h3>The 60-Minute Myth</h3>
+                <p>I try to work in 60-minute blocks. To be honest, I don’t always hit it. Some days I get distracted after ten minutes, and other days I’m too deep in a problem to notice the timer ended.</p>
+                <p>But having this milestone—the "The Block"—helps me reset. It’s not about being perfect; it’s just a reminder to come up for air. When I actually follow it, my head feels a lot clearer by the end of the day.</p>
+            </div>
+
+            <span class="log-header">Recent Milestones</span>
+            <div id="log-list">
+                <div class="log-entry" style="color:#ccc">Waiting for first completion...</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let totalSeconds = 1500;
+        let remainingSeconds = 1500;
+        let timerId = null;
+        let alarmId = null;
+        let isRunning = false;
+        
+        // Audio setup
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+        function playAlarm() {
+            // Repeat the buzz every 600ms
+            alarmId = setInterval(() => {
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+                
+                osc.type = 'square'; 
+                osc.frequency.setValueAtTime(523.25, audioCtx.currentTime); // C5
+                
+                gain.gain.setValueAtTime(0.05, audioCtx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + 0.4);
+                
+                osc.start();
+                osc.stop(audioCtx.currentTime + 0.5);
+            }, 600);
+        }
+
+        function stopAlarm() {
+            clearInterval(alarmId);
+            alarmId = null;
+            document.body.classList.remove('timer-done');
+            document.getElementById('start-btn').classList.remove('alarm-active');
+        }
+
+        function adjustDuration(mins) {
+            if (isRunning || alarmId) return;
+            document.getElementById('duration-slider').value = mins;
+            totalSeconds = mins * 60;
+            remainingSeconds = totalSeconds;
+            updateDisplay();
+        }
+
+        function updateDisplay() {
+            const m = Math.floor(remainingSeconds / 60);
+            const s = remainingSeconds % 60;
+            const timeStr = `${m}:${s.toString().padStart(2, '0')}`;
+            document.getElementById('time').innerText = timeStr;
+            document.title = isRunning ? `(${timeStr}) Focus` : "Focus Timer";
+            const progress = ((totalSeconds - remainingSeconds) / totalSeconds) * 100;
+            document.getElementById('flow-bar').style.width = progress + "%";
+        }
+
+        function toggleTimer() {
+            const btn = document.getElementById('start-btn');
+            const taskInput = document.getElementById('task-name');
+            const slider = document.getElementById('duration-slider');
+
+            // If dismissing an active alarm
+            if (alarmId) {
+                stopAlarm();
+                reset();
+                return;
+            }
+
+            if (!isRunning) {
+                if (!taskInput.value.trim()) { alert("Define objective."); return; }
+                
+                isRunning = true;
+                btn.innerText = "ABORT SESSION";
+                taskInput.disabled = true;
+                slider.disabled = true;
+
+                timerId = setInterval(() => {
+                    remainingSeconds--;
+                    updateDisplay();
+                    if (remainingSeconds <= 0) finish();
+                }, 1000);
+            } else {
+                reset();
+            }
+        }
+
+        function reset() {
+            clearInterval(timerId);
+            timerId = null;
+            isRunning = false;
+            remainingSeconds = totalSeconds;
+            updateDisplay();
+            const btn = document.getElementById('start-btn');
+            btn.innerText = "START SESSION";
+            btn.classList.remove('alarm-active');
+            document.getElementById('task-name').disabled = false;
+            document.getElementById('duration-slider').disabled = false;
+        }
+
+        function finish() {
+            const task = document.getElementById('task-name').value;
+            const log = document.getElementById('log-list');
+            if (log.innerText.includes("Waiting")) log.innerHTML = '';
+            
+            const entry = document.createElement('div');
+            entry.className = 'log-entry';
+            entry.innerHTML = `<span>${task}</span> <span>${Math.floor(totalSeconds/60)}m</span>`;
+            log.prepend(entry);
+            
+            // Trigger Alarm and Visuals
+            document.body.classList.add('timer-done');
+            document.getElementById('start-btn').innerText = "DISMISS ALARM";
+            document.getElementById('start-btn').classList.add('alarm-active');
+            playAlarm();
+            
+            if (Notification.permission === "granted") {
+                new Notification("Time Up", { body: `Milestone reached: ${task}`, requireInteraction: true });
+            }
+            
+            clearInterval(timerId);
+            timerId = null;
+            isRunning = false;
+        }
+
+        // ── Dark mode sync ────────────────────────────────────
+        const darkToggle = document.getElementById('dark-toggle');
+        function applyDark(dark) {
+            document.documentElement.classList.toggle('dark', dark);
+            darkToggle.textContent = dark ? '// light mode' : '// dark mode';
+        }
+        function toggleDark() {
+            const nowDark = !document.documentElement.classList.contains('dark');
+            localStorage.setItem('darkMode', nowDark ? '1' : '0');
+            applyDark(nowDark);
+        }
+        applyDark(localStorage.getItem('darkMode') === '1');
+
+        // Notification permission
+        if (Notification.permission !== "denied") {
+            Notification.requestPermission();
+        }
+    </script>
+</body>
+</html>
