@@ -466,7 +466,55 @@
   </div>
 
   <script>
-    // ── Copy email ────────────────────────────────────────────
+    const ANALYTICS_ENDPOINT = "REPLACE_ME_LATER";   
+
+if (ANALYTICS_ENDPOINT !== "REPLACE_ME_LATER") {
+  // Collect anonymous data and send it to your Google Sheet
+  let sessionId = sessionStorage.getItem('_sess');
+  if (!sessionId) {
+    sessionId = crypto.randomUUID ? crypto.randomUUID() : Date.now() + '-' + Math.random();
+    sessionStorage.setItem('_sess', sessionId);
+  }
+  let isReturning = localStorage.getItem('_returned') === '1';
+  if (localStorage.getItem('_returned') === null) localStorage.setItem('_returned', '1');
+  
+  const data = {
+    ts: new Date().toISOString(),
+    session_id: sessionId,
+    page: window.location.pathname,
+    referrer: document.referrer || '(direct)',
+    device: /Mobile/i.test(navigator.userAgent) ? 'mobile' : 'desktop',
+    browser: navigator.userAgent.match(/(Chrome|Firefox|Safari|Edge)/)?.[1] || 'Other',
+    os: navigator.userAgent.match(/(Windows|Mac|Linux|Android|iOS)/)?.[0] || 'Unknown',
+    screen: screen.width + 'x' + screen.height,
+    language: navigator.language.slice(0,2),
+    returning: isReturning,
+    dark_mode: document.documentElement.classList.contains('dark'),
+    type: 'pageview'
+  };
+  
+  fetch(ANALYTICS_ENDPOINT, {
+    method: 'POST',
+    body: JSON.stringify(data),
+    mode: 'no-cors',
+    keepalive: true
+  }).catch(e => console.log);
+  
+  // Track time on page
+  let start = Date.now();
+  window.addEventListener('beforeunload', () => {
+    let duration = Math.round((Date.now() - start) / 1000);
+    if (duration > 5) {
+      const durData = { ...data, type: 'duration', seconds: duration };
+      fetch(ANALYTICS_ENDPOINT, {
+        method: 'POST',
+        body: JSON.stringify(durData),
+        mode: 'no-cors',
+        keepalive: true
+      });
+    }
+  });
+}
     const toast = document.getElementById('toast');
     let toastTimer;
 
