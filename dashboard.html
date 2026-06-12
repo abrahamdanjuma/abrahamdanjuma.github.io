@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>// private dashboard</title>
+  <style>
+    @font-face {
+      font-family: 'Cascadia Code';
+      src: url('cascadia.code.ttf') format('truetype');
+    }
+    * { box-sizing: border-box; }
+    body {
+      background: var(--bg);
+      font-family: 'Cascadia Code', monospace;
+      color: var(--fg);
+      margin: 0;
+      padding: 5vh 5%;
+    }
+    :root {
+      --bg: #faf9f6;
+      --bg-card: #fff;
+      --fg: #1a1a1a;
+      --fg-mid: #555;
+      --border: #ddd;
+      --accent: #00aa00;
+    }
+    .dark {
+      --bg: #0a0a0a;
+      --bg-card: #121212;
+      --fg: #eaeaea;
+      --fg-mid: #aaa;
+      --border: #2a2a2a;
+      --accent: #66ff66;
+    }
+    .dashboard-container { max-width: 1400px; margin: 0 auto; }
+    h1 {
+      font-size: 2rem;
+      border-left: 4px solid var(--accent);
+      padding-left: 1rem;
+      margin-bottom: 0.2rem;
+    }
+    .sub {
+      color: var(--fg-mid);
+      font-size: 0.75rem;
+      margin-bottom: 2rem;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 0.5rem;
+    }
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 1rem;
+      margin-bottom: 2rem;
+    }
+    .card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      padding: 1.2rem;
+    }
+    .card h3 {
+      font-size: 0.7rem;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      margin-top: 0;
+      margin-bottom: 0.8rem;
+      color: var(--fg-mid);
+    }
+    .big-number {
+      font-size: 2.5rem;
+      font-weight: bold;
+      margin: 0;
+    }
+    .table-wrapper {
+      overflow-x: auto;
+      border: 1px solid var(--border);
+      background: var(--bg-card);
+      margin-top: 2rem;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.7rem;
+    }
+    th, td {
+      text-align: left;
+      padding: 8px 10px;
+      border-bottom: 1px solid var(--border);
+    }
+    th {
+      background: var(--bg);
+      text-transform: uppercase;
+    }
+    .password-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: var(--bg);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+    }
+    .password-box {
+      border: 1px solid var(--border);
+      padding: 2rem;
+      width: 300px;
+      background: var(--bg-card);
+    }
+    .password-box input {
+      width: 100%;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      font-family: monospace;
+      padding: 8px;
+      color: var(--fg);
+      margin: 1rem 0;
+    }
+    .password-box button {
+      background: none;
+      border: 1px solid var(--fg);
+      font-family: monospace;
+      padding: 6px 12px;
+      cursor: pointer;
+    }
+    .refresh-btn {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      font-family: monospace;
+      padding: 6px 12px;
+      font-size: 0.7rem;
+      cursor: pointer;
+      margin-left: 1rem;
+    }
+    footer {
+      margin-top: 3rem;
+      font-size: 0.6rem;
+      text-align: center;
+      color: var(--fg-mid);
+      border-top: 1px solid var(--border);
+      padding-top: 1rem;
+    }
+  </style>
+</head>
+<body>
+<div id="app">
+  <div class="dashboard-container" id="dashboardContent" style="display: none;">
+    <div style="display: flex; justify-content: space-between; align-items: baseline; flex-wrap: wrap;">
+      <div>
+        <h1>// visitor analytics</h1>
+        <div class="sub">GDPR‑clean · no cookies · your own Google Sheet</div>
+      </div>
+      <div>
+        <button id="darkToggle" class="refresh-btn">🌓 dark</button>
+        <button id="refreshBtn" class="refresh-btn">⟳ refresh</button>
+      </div>
+    </div>
+    <div class="stats-grid" id="statsGrid">
+      <div class="card"><h3>total visits</h3><div class="big-number" id="totalVisits">—</div></div>
+      <div class="card"><h3>unique sessions</h3><div class="big-number" id="uniqueSessions">—</div></div>
+      <div class="card"><h3>returning rate</h3><div class="big-number" id="returningRate">—</div></div>
+      <div class="card"><h3>avg time on page</h3><div class="big-number" id="avgDuration">—</div><span style="font-size:0.6rem;">seconds</span></div>
+    </div>
+    <div class="card" style="margin-bottom: 1rem;">
+      <h3>devices & browsers</h3>
+      <div id="deviceBreakdown" style="display: flex; gap: 2rem; flex-wrap: wrap;"></div>
+    </div>
+    <div class="table-wrapper">
+      <table>
+        <thead><tr><th>time</th><th>page</th><th>referrer</th><th>device</th><th>browser</th><th>duration</th></tr></thead>
+        <tbody id="tableBody"><tr><td colspan="6">loading data...</td></tr></tbody>
+      </table>
+    </div>
+    <footer>no IPs, no personal data — fully anonymous. You own the Google Sheet.</footer>
+  </div>
+</div>
+<script>
+  // 🔴 YOU WILL PASTE THE SAME URL HERE IN STEP 2 🔴
+  const SCRIPT_URL = "REPLACE_ME_LATER";
+  const ADMIN_PASS = "abraham";  // change this password to anything you want
+  
+  if (sessionStorage.getItem('dashboard_auth') !== 'true') {
+    const overlay = document.createElement('div');
+    overlay.className = 'password-overlay';
+    overlay.innerHTML = `
+      <div class="password-box">
+        <div style="font-weight:bold;">// private dashboard</div>
+        <div style="font-size:0.7rem; margin-top:5px;">enter password</div>
+        <input type="password" id="passInput" autocomplete="off">
+        <button id="submitPass">unlock</button>
+        <div id="passError" style="color:red; font-size:0.7rem; margin-top:8px;"></div>
+      </div>
+    `;
+    document.body.prepend(overlay);
+    const input = overlay.querySelector('#passInput');
+    const btn = overlay.querySelector('#submitPass');
+    const err = overlay.querySelector('#passError');
+    const check = () => {
+      if (input.value === ADMIN_PASS) {
+        sessionStorage.setItem('dashboard_auth', 'true');
+        overlay.remove();
+        initDashboard();
+      } else {
+        err.innerText = '// wrong password';
+        input.value = '';
+      }
+    };
+    btn.onclick = check;
+    input.onkeypress = (e) => { if(e.key === 'Enter') check(); };
+    input.focus();
+  } else {
+    initDashboard();
+  }
+  
+  async function initDashboard() {
+    if (localStorage.getItem('dashboardDark') === '1') document.documentElement.classList.add('dark');
+    document.getElementById('darkToggle').onclick = () => {
+      document.documentElement.classList.toggle('dark');
+      localStorage.setItem('dashboardDark', document.documentElement.classList.contains('dark') ? '1' : '0');
+    };
+    document.getElementById('refreshBtn').onclick = () => fetchData();
+    document.getElementById('dashboardContent').style.display = 'block';
+    await fetchData();
+    setInterval(fetchData, 60000);
+  }
+  
+  async function fetchData() {
+    if (SCRIPT_URL === "REPLACE_ME_LATER") {
+      document.getElementById('tableBody').innerHTML = '<tr><td colspan="6">⚠️ Replace SCRIPT_URL in dashboard.html with your Google Apps Script URL</td></tr>';
+      return;
+    }
+    try {
+      const res = await fetch(SCRIPT_URL + '?t=' + Date.now());
+      const data = await res.json();
+      if (data.error) throw new Error(data.error);
+      renderStats(data.rows || []);
+    } catch(e) {
+      document.getElementById('tableBody').innerHTML = `<tr><td colspan="6">❌ Error: ${e.message}</td></tr>`;
+    }
+  }
+  
+  function renderStats(rows) {
+    const total = rows.length;
+    const uniqueSessions = new Set(rows.map(r => r.session_id)).size;
+    const returning = rows.filter(r => r.returning === 'true').length;
+    const returningRate = total ? ((returning/total)*100).toFixed(1) + '%' : '0%';
+    const durations = rows.filter(r => r.type === 'duration').map(r => parseInt(r.seconds)).filter(s => s > 0);
+    const avgDur = durations.length ? (durations.reduce((a,b)=>a+b,0)/durations.length).toFixed(0) : '—';
+    
+    document.getElementById('totalVisits').innerText = total;
+    document.getElementById('uniqueSessions').innerText = uniqueSessions;
+    document.getElementById('returningRate').innerText = returningRate;
+    document.getElementById('avgDuration').innerText = avgDur;
+    
+    const devices = {};
+    rows.forEach(r => { if(r.device) devices[r.device] = (devices[r.device]||0)+1; });
+    document.getElementById('deviceBreakdown').innerHTML = Object.entries(devices).map(([k,v]) => `<div><strong>${k}</strong> ${v}</div>`).join('') || '<div>—</div>';
+    
+    const recent = [...rows].reverse().slice(0, 100);
+    document.getElementById('tableBody').innerHTML = recent.map(r => `
+      <tr>
+        <td>${new Date(r.ts).toLocaleString()}</td>
+        <td style="max-width:180px; overflow-x:auto;">${r.page || '/'}</td>
+        <td style="max-width:150px;">${(r.referrer || '').replace(/^https?:\/\//,'').slice(0,40)}</td>
+        <td>${r.device || '?'}</td>
+        <td>${r.browser || '?'}</td>
+        <td>${r.type === 'duration' ? r.seconds + 's' : '—'}</td>
+      </tr>
+    `).join('');
+  }
+</script>
+</body>
+</html>
