@@ -369,52 +369,60 @@
     }
     #toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
 
-    /* ── MOBILE OPTIMIZATIONS ──────────────────────────────── */
+    /* ── MOBILE OPTIMIZATION ─────────────────────────────────── */
     @media (max-width: 768px) {
-      .intro-text { font-size: 2rem; }
-      .sub-text   { font-size: 2rem; }
-      .cv-line    { font-size: 1.8rem; }
-      .section-label { font-size: 0.7rem; margin-bottom: 10px; }
+      html, body { cursor: auto; }
+      #cursor { display: none; }
+      .project-trigger-btn, .email-copy-btn, .enter-btn, #dark-toggle,
+      #main-dark-toggle, .cv-link, .close-projects-btn, .close-real-btn,
+      .project-entry, .wip-entry { cursor: pointer; }
 
-      .viewport { padding-left: 5%; }
+      #dark-toggle, #main-dark-toggle { right: 6%; top: 20px; font-size: 0.6rem; padding: 6px 10px; }
+      #disclaimer-layer { padding: 8% 7%; }
+      .disclaimer-box h1 { font-size: 1.4rem; }
+      .disclaimer-box p { font-size: 0.9rem; line-height: 1.5; }
+      .enter-btn { padding: 10px 20px; font-size: 0.85rem; }
 
-      .disclaimer-box h1 { font-size: 1.6rem; }
-      .disclaimer-box p  { font-size: 0.85rem; }
-      .enter-btn { padding: 10px 20px; font-size: 0.8rem; }
+      #companies-ticker { bottom: 20px; }
+      .ticker-label { font-size: 0.5rem; padding-left: 7%; letter-spacing: 2px; }
+      .ticker-item { width: 110px; }
+      .ticker-item img { height: 20px; max-height: 20px; max-width: 90px; }
+      .ticker-item.logo-tall, .ticker-item img.logo-tall { width: 60px; }
+      .ticker-item.highlight { width: 120px; }
+      .ticker-item.highlight span { font-size: 0.8rem; padding: 5px 12px; }
 
-      #dark-toggle { top: 15px; right: 5%; font-size: 0.6rem; padding: 5px 10px; }
-      #main-dark-toggle { top: 20px; right: 5%; font-size: 0.6rem; padding: 5px 10px; }
-
-      .ticker-label { padding-left: 5%; font-size: 0.55rem; }
-      .ticker-item { width: 120px; }
-      .ticker-item img { height: 22px; max-width: 90px; }
-      .ticker-item img.logo-tall { width: 60px; max-height: 28px; }
+      .viewport { padding-left: 7%; padding-right: 7%; }
+      .intro-text { font-size: 1.6rem; }
+      .sub-text { font-size: 1.3rem; }
+      .cv-line { font-size: 1.2rem; }
+      .section-label { font-size: 0.65rem; margin-bottom: 12px; }
 
       #scroll-progress { right: 5%; }
-      #section-counter { right: 5%; bottom: 20px; font-size: 0.6rem; }
+      #section-counter { right: 5%; bottom: 20px; font-size: 0.55rem; }
 
-      /* Project overlays: single column & scrollable */
+      .email-text { font-size: 1rem; }
+      .email-hint { font-size: 0.6rem; }
+
       #project-grid-isolated {
         grid-template-columns: 1fr;
-        grid-template-rows: auto;
+        grid-template-rows: repeat(4, auto);
         overflow-y: auto;
       }
-      .project-entry { padding: 20px; }
-      .close-projects-btn, .close-real-btn {
-        top: 15px; left: 15px; font-size: 0.65rem; padding: 8px 16px;
-      }
+      .project-entry { padding: 24px; }
+      .p-name { font-size: 0.95rem; }
+      .p-desc { font-size: 0.7rem; }
 
-      #real-project-overlay { overflow-y: auto; }
-      .real-projects-grid { align-items: flex-start; padding-top: 80px; }
-      .wip-entry {
-        padding: 30px 20px;
-        width: 90vw;
-        max-width: 90vw;
-      }
+      .wip-entry { padding: 30px 24px; width: 88vw; }
+      .wip-name { font-size: 0.95rem; }
+      .wip-desc { font-size: 0.7rem; }
 
-      .email-text { font-size: 1.2rem; }
-      .project-trigger-btn { border-bottom-width: 2px; }
-      .cv-link { border-bottom-width: 2px; }
+      .close-projects-btn, .close-real-btn { top: 16px; left: 16px; padding: 8px 14px; font-size: 0.65rem; }
+    }
+
+    @media (max-width: 380px) {
+      .intro-text { font-size: 1.35rem; }
+      .sub-text { font-size: 1.1rem; }
+      .cv-line { font-size: 1.05rem; }
     }
   </style>
 </head>
