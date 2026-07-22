@@ -57,6 +57,12 @@
     }
     #dark-toggle:hover { border-color: var(--fg); color: var(--fg); }
 
+    /* Shared row for dark-mode toggle + terminal nav, top-right */
+    #top-right-controls {
+      position: fixed; top: 30px; right: 10%; z-index: 9999;
+      display: flex; align-items: center; gap: 10px;
+    }
+
     /* DISCLAIMER LAYER */
     #disclaimer-layer {
       position: fixed; top: 0; left: 0; width: 100%; height: 100%;
@@ -148,11 +154,11 @@
 
     /* ANIMATIONS */
     @keyframes clockIn {
-      from { opacity: 0; transform: rotate(10deg) translateY(30px); }
-      to   { opacity: 1; transform: rotate(0deg) translateY(0); }
+      from { opacity: 0; transform: translateY(30px); }
+      to   { opacity: 1; transform: translateY(0); }
     }
     @keyframes clockOut {
-      to { opacity: 0; transform: translateY(-120px) rotate(-5deg); }
+      to { opacity: 0; transform: translateY(-120px); }
     }
     @keyframes toggleActive {
       0%, 100% { visibility: visible; }
@@ -175,6 +181,44 @@
       width: 10px; height: 10px; background: #00ff00; border-radius: 50%;
       animation: greenPulse 2s ease-out infinite; flex-shrink: 0;
     }
+
+    /* STATUS LOG — reusable pattern for current / retired statuses */
+    .status-list { display: flex; flex-direction: column; gap: 14px; margin-bottom: 22px; }
+    .status-row { display: flex; align-items: flex-start; gap: 12px; }
+    .status-dot {
+      width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0;
+      margin-top: 4px;
+    }
+    .status-dot.is-active {
+      background: #00ff00;
+      animation: greenPulse 2s ease-out infinite;
+    }
+    .status-dot.is-retired {
+      background: #ff3b30;
+      box-shadow: none;
+      animation: none;
+    }
+    .status-text {
+      font-size: 0.8rem; text-transform: uppercase; letter-spacing: 1.5px;
+      color: var(--fg-mid);
+    }
+    .status-row.is-retired .status-text {
+      text-decoration: line-through;
+      color: var(--fg-ghost);
+    }
+    .status-row.is-active .status-text {
+      color: var(--fg);
+      font-weight: bold;
+    }
+    .status-meta {
+      display: block;
+      font-size: 0.65rem;
+      color: var(--fg-faint);
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      margin-top: 4px;
+    }
+    .status-meta span.meta-value { color: var(--fg-light); }
 
     /* SCROLL PROGRESS */
     #scroll-progress {
@@ -357,6 +401,46 @@
     .email-copy-btn.copied .email-text { color: var(--fg-light); border-color: var(--fg-light); }
     .email-copy-btn.copied .email-hint { color: var(--fg); }
 
+    /* TERMINAL NAV — collapsed prompt that expands into cd-style jump commands */
+    #nav-terminal {
+      position: relative;
+      opacity: 0; pointer-events: none;
+      transition: opacity 1s ease;
+      font-family: 'Cascadia Code', monospace;
+    }
+    #nav-terminal-toggle {
+      background: var(--bg); border: 1px solid var(--fg-faint);
+      color: var(--fg-mid); font-family: 'Cascadia Code', monospace;
+      font-size: 0.75rem; letter-spacing: 1px; padding: 8px 14px;
+      cursor: none; display: flex; align-items: center; gap: 6px;
+      transition: border-color 0.3s ease, color 0.3s ease, background 0.4s ease;
+    }
+    #nav-terminal-toggle:hover { border-color: var(--fg); color: var(--fg); }
+    .nav-caret { color: var(--fg-faint); }
+    .nav-blink { animation: blink 1s step-end infinite; }
+
+    #nav-terminal-panel {
+      position: absolute; top: calc(100% + 8px); right: 0; left: auto;
+      background: var(--bg-off); border: 1px solid var(--fg-faint);
+      min-width: 220px; max-height: 0; overflow: hidden;
+      transition: max-height 0.35s ease, border-color 0.3s ease, background 0.4s ease;
+    }
+    #nav-terminal.is-open #nav-terminal-panel { max-height: 260px; }
+    #nav-terminal.is-open #nav-terminal-toggle { border-color: var(--fg); color: var(--fg); }
+
+    .nav-cmd-row {
+      display: block; width: 100%; text-align: left;
+      background: none; border: none; border-bottom: 1px solid var(--fg-line);
+      color: var(--fg-mid); font-family: 'Cascadia Code', monospace;
+      font-size: 0.7rem; letter-spacing: 1px; padding: 10px 14px;
+      cursor: none; transition: background 0.2s ease, color 0.2s ease;
+    }
+    .nav-cmd-row:last-child { border-bottom: none; }
+    .nav-cmd-row:hover { background: var(--bg-hover); color: var(--fg); }
+    .nav-cmd-row.is-current { color: var(--fg); font-weight: bold; }
+    .nav-cmd-row .nav-cmd-path { color: var(--fg-faint); }
+    .nav-cmd-row.is-current .nav-cmd-path { color: var(--fg-light); }
+
     /* TOAST */
     #toast {
       position: fixed; bottom: 60px; left: 50%; transform: translateX(-50%) translateY(20px);
@@ -375,9 +459,14 @@
       #cursor { display: none; }
       .project-trigger-btn, .email-copy-btn, .enter-btn, #dark-toggle,
       #main-dark-toggle, .cv-link, .close-projects-btn, .close-real-btn,
-      .project-entry, .wip-entry { cursor: pointer; }
+      .project-entry, .wip-entry, #nav-terminal-toggle, .nav-cmd-row { cursor: pointer; }
 
-      #dark-toggle, #main-dark-toggle { right: 6%; top: 20px; font-size: 0.6rem; padding: 6px 10px; }
+      #dark-toggle { right: 6%; top: 20px; font-size: 0.6rem; padding: 6px 10px; }
+      #top-right-controls { top: 20px; right: 6%; gap: 6px; }
+      #main-dark-toggle { font-size: 0.6rem; padding: 6px 10px; }
+      #nav-terminal-toggle { font-size: 0.6rem; padding: 6px 10px; }
+      #nav-terminal-panel { min-width: 60vw; }
+      .nav-cmd-row { font-size: 0.65rem; padding: 12px 14px; }
       #disclaimer-layer { padding: 8% 7%; }
       .disclaimer-box h1 { font-size: 1.4rem; }
       .disclaimer-box p { font-size: 0.9rem; line-height: 1.5; }
@@ -431,7 +520,23 @@
   <div id="cursor"></div>
   <div id="noise-overlay"></div>
   <div id="toast">// copied to clipboard</div>
-  <button id="main-dark-toggle" onclick="toggleDark()" style="position:fixed;top:30px;right:10%;background:none;border:1px solid var(--fg-faint);color:var(--fg-light);font-family:'Cascadia Code',monospace;font-size:0.65rem;letter-spacing:2px;text-transform:uppercase;padding:7px 14px;cursor:none;z-index:9999;opacity:0;transition:opacity 1s ease,border-color 0.3s ease,color 0.3s ease,background 0.4s ease;pointer-events:none;" onmouseenter="this.style.borderColor='var(--fg)';this.style.color='var(--fg)'" onmouseleave="this.style.borderColor='var(--fg-faint)';this.style.color='var(--fg-light)'">// dark mode</button>
+  <div id="top-right-controls">
+    <button id="main-dark-toggle" onclick="toggleDark()" style="background:none;border:1px solid var(--fg-faint);color:var(--fg-light);font-family:'Cascadia Code',monospace;font-size:0.65rem;letter-spacing:2px;text-transform:uppercase;padding:7px 14px;cursor:none;opacity:0;transition:opacity 1s ease,border-color 0.3s ease,color 0.3s ease,background 0.4s ease;pointer-events:none;" onmouseenter="this.style.borderColor='var(--fg)';this.style.color='var(--fg)'" onmouseleave="this.style.borderColor='var(--fg-faint)';this.style.color='var(--fg-light)'">// dark mode</button>
+
+    <!-- TERMINAL NAV -->
+    <div id="nav-terminal">
+      <button id="nav-terminal-toggle" onclick="toggleNavTerminal()" aria-label="Open navigation">
+        <span class="nav-caret">&gt;</span><span id="nav-terminal-current">go --intro</span><span class="nav-blink">_</span>
+      </button>
+      <div id="nav-terminal-panel">
+        <button class="nav-cmd-row" data-pct="0" onclick="jumpToSection(0, 'intro')"><span class="nav-cmd-path">cd</span> ~/intro</button>
+        <button class="nav-cmd-row" data-pct="0.22" onclick="jumpToSection(0.22, 'cv')"><span class="nav-cmd-path">cd</span> ~/cv</button>
+        <button class="nav-cmd-row" data-pct="0.46" onclick="jumpToSection(0.46, 'projects')"><span class="nav-cmd-path">cd</span> ~/projects</button>
+        <button class="nav-cmd-row" data-pct="0.70" onclick="jumpToSection(0.70, 'experiments')"><span class="nav-cmd-path">cd</span> ~/experiments</button>
+        <button class="nav-cmd-row" data-pct="0.92" onclick="jumpToSection(0.92, 'contact')"><span class="nav-cmd-path">cd</span> ~/contact</button>
+      </div>
+    </div>
+  </div>
 
   <!-- SCROLL PROGRESS -->
   <div id="scroll-progress">
@@ -509,11 +614,20 @@
     </div>
 
     <div class="contact-group">
-      <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 15px;">
-        <div class="green-dot"></div>
-        <span style="font-size: 0.8rem; color: #999; text-transform: uppercase;">currently seeking placement</span>
+      <div class="status-list">
+        <div class="status-row is-retired">
+          <div class="status-dot is-retired"></div>
+          <span class="status-text">Seeking T-Level placement</span>
+        </div>
+        <div class="status-row is-active">
+          <div class="status-dot is-active"></div>
+          <div>
+            <span class="status-text">Placement secured — Emarspath</span>
+            <span class="status-meta">Offer received <span class="meta-value">30 June 2026</span> // Start date <span class="meta-value">19 August 2026</span></span>
+          </div>
+        </div>
       </div>
-      <span class="clock-item intro-text">Seeking a T-Level placement.</span>
+      <span class="clock-item intro-text">I've since found my T-Level placement.</span>
       <button class="email-copy-btn clock-item" onclick="copyEmail(this)">
         <span class="email-text">25043930@activatelearning.ac.uk</span>
         <span class="email-hint">// click to copy</span>
@@ -591,6 +705,30 @@ if (ANALYTICS_ENDPOINT !== "REPLACE_ME_LATER") {
       toast.classList.add('show');
       toastTimer = setTimeout(() => toast.classList.remove('show'), 2500);
     }
+
+    // ── Terminal nav ─────────────────────────────────────────
+    const navTerminal   = document.getElementById('nav-terminal');
+    const navCurrentEl  = document.getElementById('nav-terminal-current');
+    const navCmdRows    = document.querySelectorAll('.nav-cmd-row');
+
+    function toggleNavTerminal() {
+      navTerminal.classList.toggle('is-open');
+    }
+
+    function jumpToSection(pct, label) {
+      const maxScroll = document.body.scrollHeight - window.innerHeight;
+      // land a touch past the breakpoint so the section's scroll-driven
+      // animation has already resolved to its "in" state on arrival
+      const target = Math.min(maxScroll, (pct + 0.02) * maxScroll);
+      window.scrollTo({ top: target, behavior: 'smooth' });
+      navTerminal.classList.remove('is-open');
+    }
+
+    document.addEventListener('click', (e) => {
+      if (navTerminal && !navTerminal.contains(e.target)) {
+        navTerminal.classList.remove('is-open');
+      }
+    });
 
     function copyEmail(btn) {
       const email = '25043930@activatelearning.ac.uk';
@@ -704,6 +842,10 @@ if (ANALYTICS_ENDPOINT !== "REPLACE_ME_LATER") {
       dots.forEach((d, i) => d.classList.toggle('active', i === current));
       counterEl.textContent = sectionLabels[current] + ' / 05';
 
+      const navLabels = ['intro', 'cv', 'projects', 'experiments', 'contact'];
+      if (navCurrentEl) navCurrentEl.textContent = 'go --' + navLabels[current];
+      navCmdRows.forEach((row, i) => row.classList.toggle('is-current', i === current));
+
       // The viewport wrapper itself must allow pointer-events when any group is active
       const anyActive = groups.some(({ range }) => pct >= range[0] && pct <= range[1]);
       content.style.pointerEvents = anyActive ? 'auto' : 'none';
@@ -765,6 +907,8 @@ if (ANALYTICS_ENDPOINT !== "REPLACE_ME_LATER") {
         counterEl.style.opacity  = '1';
         mainToggle.style.opacity = '1';
         mainToggle.style.pointerEvents = 'auto';
+        navTerminal.style.opacity = '1';
+        navTerminal.style.pointerEvents = 'auto';
         document.documentElement.style.overflowY = 'auto';
       }, 800);
       refreshHovers();
@@ -779,6 +923,8 @@ if (ANALYTICS_ENDPOINT !== "REPLACE_ME_LATER") {
         counterEl.style.opacity  = '1';
         mainToggle.style.opacity = '1';
         mainToggle.style.pointerEvents = 'auto';
+        navTerminal.style.opacity = '1';
+        navTerminal.style.pointerEvents = 'auto';
         document.documentElement.style.overflowY = 'auto';
 
         // Restore scroll position if we saved one
