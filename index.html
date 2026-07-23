@@ -441,6 +441,27 @@
     .nav-cmd-row .nav-cmd-path { color: var(--fg-faint); }
     .nav-cmd-row.is-current .nav-cmd-path { color: var(--fg-light); }
 
+    /* NEW PROJECT BADGE */
+    #new-project-badge {
+      position: fixed; left: 10%; bottom: 40px; z-index: 900;
+      display: inline-flex; align-items: center; gap: 10px;
+      background: var(--bg-off); border: 1px solid var(--fg-faint);
+      padding: 9px 16px; text-decoration: none; color: var(--fg-mid);
+      font-family: 'Cascadia Code', monospace; font-size: 0.7rem;
+      letter-spacing: 1px; cursor: none;
+      opacity: 0; transform: translateY(6px);
+      transition: opacity 1s ease 0.3s, transform 0.6s ease 0.3s, border-color 0.3s ease, color 0.3s ease, background 0.4s ease;
+      pointer-events: none;
+    }
+    #new-project-badge.is-visible { opacity: 1; transform: translateY(0); }
+    #new-project-badge:hover { border-color: var(--fg); color: var(--fg); }
+    #new-project-badge .badge-dot {
+      width: 7px; height: 7px; border-radius: 50%; background: #00ff00; flex-shrink: 0;
+      animation: greenPulse 2s ease-out infinite;
+    }
+    #new-project-badge .badge-arrow { transition: transform 0.3s ease; }
+    #new-project-badge:hover .badge-arrow { transform: translateX(3px); }
+
     /* TOAST */
     #toast {
       position: fixed; bottom: 60px; left: 50%; transform: translateX(-50%) translateY(20px);
@@ -506,6 +527,8 @@
       .wip-desc { font-size: 0.7rem; }
 
       .close-projects-btn, .close-real-btn { top: 16px; left: 16px; padding: 8px 14px; font-size: 0.65rem; }
+
+      #new-project-badge { left: 6%; bottom: 20px; padding: 7px 12px; font-size: 0.6rem; gap: 8px; }
     }
 
     @media (max-width: 380px) {
@@ -520,6 +543,11 @@
   <div id="cursor"></div>
   <div id="noise-overlay"></div>
   <div id="toast">// copied to clipboard</div>
+  <a id="new-project-badge" href="https://abrahamdanjuma.github.io/Dependency-Risk-Audit/" target="_blank" rel="noopener">
+    <span class="badge-dot"></span>
+    <span>New: Audit Tool is live — check it out</span>
+    <span class="badge-arrow">→</span>
+  </a>
   <div id="top-right-controls">
     <button id="main-dark-toggle" onclick="toggleDark()" style="background:none;border:1px solid var(--fg-faint);color:var(--fg-light);font-family:'Cascadia Code',monospace;font-size:0.65rem;letter-spacing:2px;text-transform:uppercase;padding:7px 14px;cursor:none;opacity:0;transition:opacity 1s ease,border-color 0.3s ease,color 0.3s ease,background 0.4s ease;pointer-events:none;" onmouseenter="this.style.borderColor='var(--fg)';this.style.color='var(--fg)'" onmouseleave="this.style.borderColor='var(--fg-faint)';this.style.color='var(--fg-light)'">// dark mode</button>
 
@@ -552,15 +580,11 @@
   <div id="real-project-overlay">
     <button class="close-real-btn" onclick="hideRealProjects()">BACK TO MAIN</button>
     <div class="real-projects-grid">
-      <div class="wip-entry">
-        <span class="wip-not-ready">build incomplete</span>
+      <a href="https://abrahamdanjuma.github.io/Dependency-Risk-Audit/" class="wip-entry" style="text-decoration:none;color:inherit;">
+        <span class="wip-not-ready">build complete</span>
         <span class="wip-name">audit tool</span>
-        <span class="wip-desc">Still building this. The idea is to scan a codebase for package risks and compliance issues — the kind of thing I'd want to exist at a real job.</span>
-        <div class="wip-bar-wrap">
-          <div class="wip-bar-stuck"></div>
-        </div>
-        <span class="wip-percent">50% </span>
-      </div>
+        <span class="wip-desc">A tool that scans a codebase for package risks and compliance issues — the kind of thing I'd want to exist at a real job.</span>
+      </a>
     </div>
   </div>
 
@@ -816,6 +840,7 @@ if (ANALYTICS_ENDPOINT !== "REPLACE_ME_LATER") {
     const progressEl   = document.getElementById('scroll-progress');
     const counterEl    = document.getElementById('section-counter');
     const dots         = document.querySelectorAll('.progress-dot');
+    const newProjectBadge = document.getElementById('new-project-badge');
 
     // ── Cursor ──────────────────────────────────────────────
     window.addEventListener('mousemove', (e) => {
@@ -885,7 +910,7 @@ if (ANALYTICS_ENDPOINT !== "REPLACE_ME_LATER") {
 
     // ── Cursor hover effects ──────────────────────────────────
     function refreshHovers() {
-      document.querySelectorAll('a, button, .project-entry, .wip-entry').forEach(el => {
+      document.querySelectorAll('a, button, .project-entry, .wip-entry, #new-project-badge').forEach(el => {
         el.onmouseenter = () => cursor.classList.add('cursor-hover');
         el.onmouseleave = () => cursor.classList.remove('cursor-hover');
       });
@@ -910,6 +935,8 @@ if (ANALYTICS_ENDPOINT !== "REPLACE_ME_LATER") {
         navTerminal.style.opacity = '1';
         navTerminal.style.pointerEvents = 'auto';
         document.documentElement.style.overflowY = 'auto';
+        newProjectBadge.classList.add('is-visible');
+        newProjectBadge.style.pointerEvents = 'auto';
       }, 800);
       refreshHovers();
     }
@@ -926,6 +953,8 @@ if (ANALYTICS_ENDPOINT !== "REPLACE_ME_LATER") {
         navTerminal.style.opacity = '1';
         navTerminal.style.pointerEvents = 'auto';
         document.documentElement.style.overflowY = 'auto';
+        newProjectBadge.classList.add('is-visible');
+        newProjectBadge.style.pointerEvents = 'auto';
 
         // Restore scroll position if we saved one
         const savedScroll = sessionStorage.getItem('scrollPos');
